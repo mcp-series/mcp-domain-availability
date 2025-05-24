@@ -36,6 +36,30 @@
   - Automated domain suggestion workflows
   - Smart recommendations based on availability
 
+### Demo
+<p>
+ <a href="https://www.youtube.com/watch?v=pJjrkEihlWE">
+   <img src="assets/preview.png" width="600" alt="Domain Availability MCP server demo" />
+ </a>
+</p>
+
+<details>
+<summary>Timestamps:</summary>
+Click on any timestamp to jump to that section of the video
+
+[**00:00**](https://www.youtube.com/watch?v=pJjrkEihlWE&t=0s) - **Checking google.com availability**  
+Testing a well-known premium domain to demonstrate the domain checking functionality and alternative TLD suggestions.
+
+[**00:20**](https://www.youtube.com/watch?v=pJjrkEihlWE&t=20s) - **Testing myawesomesite.com**  
+Verifying availability for a custom domain name and exploring alternative extension options.
+
+[**00:40**](https://www.youtube.com/watch?v=pJjrkEihlWE&t=40s) - **Verifying techstartup2026.io**  
+Exploring tech startup domain options and checking availability across multiple TLD extensions.
+
+[**01:00**](https://www.youtube.com/watch?v=pJjrkEihlWE&t=60s) - **Analyzing aitools domain**  
+Checking competitive AI industry domains and analyzing market availability for startup naming.
+</details>
+
 ### Requirements
 
 - Python 3.10 or higher
