@@ -41,6 +41,43 @@ NEW_TLDS = [
 
 ALL_TLDS = list(set(POPULAR_TLDS + COUNTRY_TLDS + NEW_TLDS))
 
+TLD_MIN_LENGTH = {
+    "com": 3, "net": 3, "org": 3, "info": 3, "biz": 3,
+    "io": 3, "ai": 3, "co": 3, "me": 3,
+    "de": 3, "fr": 3, "it": 3, "es": 3, "nl": 3,
+    "ch": 3, "at": 3, "be": 3, "dk": 3, "se": 3,
+    "no": 3, "fi": 3, "pl": 3, "cz": 3, "pt": 3,
+    "gr": 3, "tr": 3, "ru": 3, "uk": 3, "au": 3,
+    "ca": 3, "us": 3, "jp": 3, "kr": 3, "cn": 3,
+    "in": 3, "br": 3, "mx": 3, "ar": 3, "cl": 3,
+    "pe": 3, "za": 3, "eg": 3, "ma": 3, "ng": 3,
+    "ke": 3,
+    
+    "app": 3, "dev": 3, "xyz": 3, "tech": 3,
+    "online": 3, "site": 3, "website": 3, "store": 3,
+    "shop": 3, "cloud": 3, "digital": 3, "blog": 3,
+    "news": 3
+}
+
+def get_min_length_for_tld(tld: str) -> int:
+    """Obtiene la longitud mínima requerida para un TLD"""
+    return TLD_MIN_LENGTH.get(tld, 3)
+
+def is_valid_domain_name(base_name: str, tld: str) -> bool:
+    """Valida si un nombre de dominio cumple con las reglas del TLD"""
+    min_length = get_min_length_for_tld(tld)
+    if len(base_name) < min_length:
+        return False
+    if not re.match(r'^[a-z0-9]([a-z0-9-]*[a-z0-9])?$', base_name):
+        return False
+    if base_name.startswith('-') or base_name.endswith('-'):
+        return False
+    if '--' in base_name:
+        return False
+    if len(base_name) > 63:
+        return False
+    return True
+
 def clean_domain_name(domain: str) -> str:
     domain = domain.lower().strip()
     if domain.startswith('http://') or domain.startswith('https://'):
@@ -136,6 +173,15 @@ async def check_domain_socket(domain: str) -> bool:
 
 async def check_domain_availability(domain: str) -> Dict:
     start_time = time.time()
+    base_name, tld = extract_domain_parts(domain)
+    if not is_valid_domain_name(base_name, tld):
+        return {
+            'domain': domain,
+            'available': False,
+            'error': f'Invalid domain: "{base_name}" does not meet requirements for .{tld} (min length: {get_min_length_for_tld(tld)})',
+            'valid': False,
+            'check_time': "0s"
+        }
     
     dns_available = await check_domain_dns(domain)
     whois_available = await check_domain_whois(domain)
@@ -150,6 +196,7 @@ async def check_domain_availability(domain: str) -> Dict:
         'available': is_available,
         'dns_available': dns_available,
         'whois_available': whois_available,
+        'valid': True,
         'check_time': f"{check_time}s"
     }
 
@@ -158,8 +205,11 @@ async def check_multiple_domains(base_name: str, tlds: List[str]) -> List[Dict]:
     
     async def check_with_semaphore(tld: str):
         async with semaphore:
-            domain = f"{base_name}.{tld}"
-            return await check_domain_availability(domain)
+            if is_valid_domain_name(base_name, tld):
+                domain = f"{base_name}.{tld}"
+                return await check_domain_availability(domain)
+            else:
+                return None
     
     tasks = [check_with_semaphore(tld) for tld in tlds]
     results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -168,7 +218,7 @@ async def check_multiple_domains(base_name: str, tlds: List[str]) -> List[Dict]:
     for result in results:
         if isinstance(result, dict):
             valid_results.append(result)
-        else:
+        elif result is not None and not isinstance(result, Exception):
             print(f"Error checking domain: {result}")
     
     return valid_results
@@ -180,9 +230,26 @@ async def run_domain_checks(domain_part: str) -> Dict:
         "requested_domain": None,
         "available_domains": [],
         "unavailable_domains": [],
+        "invalid_domains": [],
         "total_checked": 0,
         "check_summary": {}
     }
+    
+    invalid_for_tlds = []
+    for tld in ALL_TLDS:
+        if not is_valid_domain_name(base_name, tld):
+            min_length = get_min_length_for_tld(tld)
+            invalid_for_tlds.append({
+                'tld': tld,
+                'reason': f'Minimum length: {min_length} chars'
+            })
+    
+    if invalid_for_tlds:
+        results["invalid_domains"] = {
+            'base_name': base_name,
+            'length': len(base_name),
+            'invalid_for': invalid_for_tlds[:10]
+        }
     
     if existing_tld:
         exact_result = await check_domain_availability(f"{base_name}.{existing_tld}")
@@ -190,12 +257,13 @@ async def run_domain_checks(domain_part: str) -> Dict:
         
         other_tlds = [tld for tld in ALL_TLDS if tld != existing_tld]
         all_results = await check_multiple_domains(base_name, other_tlds)
-        all_results.append(exact_result)
+        if exact_result.get('valid', True):
+            all_results.append(exact_result)
     else:
         all_results = await check_multiple_domains(base_name, ALL_TLDS)
     
     for result in all_results:
-        if result['available']:
+        if result.get('available'):
             results["available_domains"].append(result)
         else:
             results["unavailable_domains"].append(result)
@@ -210,6 +278,7 @@ async def run_domain_checks(domain_part: str) -> Dict:
     results["check_summary"] = {
         "total_available": len(results["available_domains"]),
         "total_unavailable": len(results["unavailable_domains"]),
+        "total_invalid": len(invalid_for_tlds),
         "popular_available": len(popular_available),
         "country_available": len([r for r in results["available_domains"] 
                                 if any(r['domain'].endswith(f'.{tld}') for tld in COUNTRY_TLDS)]),
