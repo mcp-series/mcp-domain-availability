@@ -2,6 +2,7 @@ import asyncio
 import socket
 import time
 import re
+import os
 from typing import Dict, List, Tuple, Optional
 from concurrent.futures import ThreadPoolExecutor
 
@@ -17,7 +18,7 @@ except ImportError:
 
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP("Domain Availability Checker")
+mcp = FastMCP("Domain Availability Checker", host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
 
 POPULAR_TLDS = [
     "com", "net", "org", "io", "ai", "app", "dev", "co", "xyz", "me", "info", "biz"
@@ -333,3 +334,6 @@ async def check_domain(domain_query: str) -> Dict:
         return {
             "error": f"Failed to check domain: {str(e)}"
         }
+    
+if __name__ == "__main__":
+     mcp.run(transport="sse")

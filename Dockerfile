@@ -26,4 +26,6 @@ ENV PATH="/app/.venv/bin:$PATH"
 COPY --from=uv /app /app/
 ENV PYTHONPATH=/app
 
-ENTRYPOINT ["mcp-domain-availability"]
+EXPOSE 8080
+
+ENTRYPOINT ["python", "-m", "mcp_domain_availability.main"]
