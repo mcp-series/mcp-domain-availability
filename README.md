@@ -168,6 +168,58 @@ uv sync
 uv run src/mcp_domain_availability/main.py
 ```
 
+### Deploying with Docker to Google Cloud Run
+
+You can deploy this service to Google Cloud Run using the provided Dockerfile and deployment script.
+
+**Prerequisites:**
+- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) installed and authenticated (`gcloud auth login`).
+- [Docker](https://docs.docker.com/get-docker/) installed and running.
+- A Google Cloud Project with the Cloud Run and Container Registry APIs enabled.
+
+#### Using the Deployment Script
+
+The easiest way to deploy is to use the `deploy.sh` script.
+
+1.  **Edit the script:**
+    Open `deploy.sh` and replace `...` with your Google Cloud `PROJECT_ID`. You can also change the `REGION` if needed.
+
+2.  **Run the script:**
+    Make the script executable and run it.
+    ```sh
+    chmod +x deploy.sh
+    ./deploy.sh
+    ```
+    The script will build the Docker image, push it to Google Container Registry, and deploy it to Cloud Run.
+
+#### Manual Deployment
+
+Alternatively, you can run the commands manually.
+
+1.  **Set environment variables:**
+    ```sh
+    export PROJECT_ID="<YOUR_PROJECT_ID>"
+    export REGION="<YOUR_REGION>" # e.g., us-central1
+    export IMAGE="gcr.io/$PROJECT_ID/mcp-domain-availability:latest"
+    ```
+
+2.  **Build and push the Docker image:**
+    ```sh
+    docker buildx build --platform linux/amd64 -t $IMAGE --push .
+    ```
+
+3.  **Deploy to Google Cloud Run:**
+    ```sh
+    gcloud run deploy mcp-domain-availability \
+      --image $IMAGE \
+      --region $REGION \
+      --platform managed \
+      --allow-unauthenticated \
+      --port 8080 \
+      --project $PROJECT_ID
+    ```
+
+
 ### How It Works
 
 The MCP Domain Availability Checker uses multiple verification methods to determine domain availability:
