@@ -257,7 +257,7 @@ Domains are checked concurrently, capped at 10 in flight to stay within registry
 
 ### Available Tools
 
-> **Changed in 0.2.0**: the `--domain` flag is no longer required — ask for a domain in plain
+> **Changed in 0.5.0**: the `--domain` flag is no longer required — ask for a domain in plain
 > language. The flag is still accepted so existing prompts keep working. Bulk TLD checking moved
 > into its own tool, so asking about one domain no longer triggers ~95 lookups.
 

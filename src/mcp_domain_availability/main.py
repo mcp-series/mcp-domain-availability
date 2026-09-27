@@ -29,7 +29,7 @@ from mcp.server.mcpserver import MCPServer
 
 # MCP Python SDK 2.x renamed FastMCP to MCPServer and moved the transport's host and
 # port from the constructor to run(); see the SDK migration guide.
-mcp = MCPServer("Domain Availability Checker", version="0.2.0")
+mcp = MCPServer("Domain Availability Checker", version="0.5.0")
 
 USER_AGENT = "mcp-domain-availability (+https://github.com/imprvhub/mcp-domain-availability)"
 RDAP_BOOTSTRAP_URL = "https://data.iana.org/rdap/dns.json"
